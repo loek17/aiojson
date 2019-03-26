@@ -4,6 +4,7 @@ Pure-python parsing backend.
 '''
 import decimal
 import re
+import codecs
 
 from .. import common
 from ..utils.aiogen import aiogen
@@ -105,13 +106,14 @@ class Lexer(object):
         self.buf_size = buf_size
         self.stream_done = False
         self.buffer = None
+        self.decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
 
     async def read_buffer(self):
         # TODO: this breaks if a utf-8 character is split in the middle of a chunk boundary
-        # Need a good asyncio solution here.
+        # Need a good asyncio solution here. (Fixed with codecs.getincrementaldecoder)
         data = await self.stream.read(self.buf_size)
         if isinstance(data, (bytes, bytearray)):
-            data = data.decode('utf-8')
+            data = self.decoder.decode(data)
         return Buffer(data)
 
     async def __aiter__(self):
